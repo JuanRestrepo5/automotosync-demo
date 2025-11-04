@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AUTOMOTOSYNC — App</title>
+  <style>
+    :root{
+      --bg:#f6f8fb; --card:#ffffff; --accent:#0b74ff; --muted:#6b7280; --success:#16a34a;
+      --radius:12px;
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#1a1a1a;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+    
+    /* Phone container */
+    .phone{
+      width:375px;
+      height:667px;
+      background:linear-gradient(180deg,#f6f8fb, #eef3fb);
+      border-radius:30px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.3);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      position:relative;
+    }
+    
+    /* Header */
+    .header{background:var(--card);padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:none;align-items:center;justify-content:space-between;z-index:100}
+    .header.show{display:flex}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:40px;height:40px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px}
+    h1{font-size:16px;font-weight:600}
+
+    /* Content */
+    .content{padding:16px 20px;overflow-y:auto;flex:1;padding-bottom:80px}
+    .content.no-padding{padding:0}
+    .card{background:var(--card);border-radius:14px;padding:18px;box-shadow:0 4px 12px rgba(12,30,70,0.08);margin-bottom:16px}
+    
+    /* Dashboard grid */
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
+    .widget{padding:16px;border-radius:12px;background:linear-gradient(135deg,#fff,#f8fbff);box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+    .widget h3{font-size:13px;color:var(--muted);margin-bottom:8px;font-weight:500}
+    .widget .big{font-size:24px;font-weight:700;color:#111;margin-bottom:4px}
+    .widget .muted{font-size:12px;color:var(--muted)}
+
+    /* Lists */
+    .list{display:flex;flex-direction:column;gap:8px}
+    .list .row{padding:12px;border-radius:10px;background:#f8fbff;font-size:14px;line-height:1.4}
+
+    /* Forms */
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;margin-top:12px}
+    label:first-child{margin-top:0}
+    .input{width:100%;padding:12px;border-radius:10px;border:1px solid #e6edf9;font-size:14px}
+    .btn{width:100%;padding:12px;border-radius:10px;border:0;background:var(--accent);color:#fff;cursor:pointer;font-size:14px;font-weight:600;margin-top:12px}
+    .btn.ghost{background:transparent;color:var(--accent);border:1px solid rgba(11,116,255,0.2)}
+    .btn.small{padding:8px 12px;font-size:12px;margin-top:0}
+    .btn.danger{background:#dc2626}
+    
+    /* Action buttons */
+    .action-btns{display:flex;gap:8px;margin-top:8px}
+    .action-btn{padding:6px 12px;border-radius:6px;border:1px solid #e6edf9;background:#fff;font-size:12px;cursor:pointer}
+    .action-btn.edit{color:var(--accent);border-color:var(--accent)}
+    .action-btn.delete{color:#dc2626;border-color:#dc2626}
+    
+    /* Search */
+    .search-box{margin-bottom:12px}
+    
+    /* Checkbox */
+    .checkbox-group{display:flex;align-items:center;gap:8px;margin-top:12px}
+    .checkbox-group input[type="checkbox"]{width:18px;height:18px}
+
+    /* Bottom nav */
+    .bottom-nav{position:absolute;bottom:0;left:0;right:0;background:var(--card);box-shadow:0 -2px 12px rgba(0,0,0,0.08);display:none;justify-content:space-around;padding:8px 0;z-index:100}
+    .bottom-nav.show{display:flex}
+    .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;cursor:pointer;color:var(--muted);font-size:11px;border:none;background:transparent}
+    .nav-item.active{color:var(--accent);font-weight:600}
+    .nav-icon{width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:18px}
+
+    .muted{color:var(--muted);font-size:13px}
+    textarea.input{height:80px;resize:none}
+    
+    h2{font-size:18px;margin-bottom:16px}
+    h3{font-size:15px;margin-bottom:12px}
+    
+    /* Splash Screen */
+    .splash{
+      position:absolute;
+      top:0;left:0;right:0;bottom:0;
+      background:linear-gradient(135deg,var(--accent),#3ba1ff);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      z-index:1000;
+      animation:fadeOut 0.5s ease 2s forwards;
+    }
+    @keyframes fadeOut{
+      to{opacity:0;pointer-events:none}
+    }
+    .splash-logo{
+      width:120px;
+      height:120px;
+      border-radius:24px;
+      background:rgba(255,255,255,0.95);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:48px;
+      font-weight:700;
+      color:var(--accent);
+      box-shadow:0 20px 60px rgba(0,0,0,0.2);
+      animation:pulse 1.5s ease infinite;
+    }
+    @keyframes pulse{
+      0%,100%{transform:scale(1)}
+      50%{transform:scale(1.05)}
+    }
+    .splash h1{
+      color:#fff;
+      margin-top:24px;
+      font-size:26px;
+      font-weight:700;
+    }
+    .splash p{
+      color:rgba(255,255,255,0.9);
+      font-size:14px;
+      margin-top:8px;
+    }
+    
+    /* Chart placeholder */
+    .chart-box{
+      height:200px;
+      border-radius:12px;
+      background:linear-gradient(135deg,#f8fbff,#ffffff);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:var(--muted);
+      border:2px dashed #e6edf9;
+      margin-bottom:16px;
+    }
+    
+    /* Scrollbar */
+    .content::-webkit-scrollbar{width:4px}
+    .content::-webkit-scrollbar-track{background:transparent}
+    .content::-webkit-scrollbar-thumb{background:#ccc;border-radius:4px}
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <!-- Splash Screen -->
+    <div class="splash" id="splash">
+      <div class="splash-logo">A</div>
+      <h1>AUTOMOTOSYNC</h1>
+      <p>Cargando...</p>
+    </div>
+    <!-- Header -->
+    <div class="header">
+      <div class="brand">
+        <div class="logo">A</div>
+        <h1 id="page-title">AUTOMOTOSYNC</h1>
+      </div>
+      <div id="settings-btn" style="font-size:20px;cursor:pointer;display:none" onclick="show('config')">⚙️</div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="content">
+
+      <!-- LOGIN -->
+      <div id="screen-login">
+        <div style="display:flex;flex-direction:column;align-items:center;margin-top:50px;margin-bottom:30px">
+          <div style="width:90px;height:90px;border-radius:20px;background:linear-gradient(135deg,var(--accent),#3ba1ff);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:36px;box-shadow:0 10px 30px rgba(11,116,255,0.3)">A</div>
+          <h1 style="margin-top:16px;font-size:22px;font-weight:700;color:#111">AUTOMOTOSYNC</h1>
+          <p style="color:var(--muted);font-size:13px;margin-top:2px">Gestión de talleres</p>
+        </div>
+        <div class="card">
+          <h2 style="font-size:17px">Iniciar Sesión</h2>
+          <p class="muted" style="font-size:12px">Accede con tu correo y contraseña</p>
+          <label>Email</label>
+          <input class="input" placeholder="correo@taller.com" />
+          <label>Contraseña</label>
+          <input class="input" type="password" placeholder="••••••" />
+          <div class="checkbox-group">
+            <input type="checkbox" id="remember" />
+            <label for="remember" style="margin:0;cursor:pointer">Recordar sesión</label>
+          </div>
+          <button class="btn" onclick="show('dashboard')">Entrar</button>
+          <button class="btn ghost" onclick="show('registro')">Registrarse</button>
+          <p style="margin-top:10px;text-align:center" class="muted"><a href="#" onclick="show('recuperar');return false">¿Olvidó su contraseña?</a></p>
+        </div>
+      </div>
+      
+      <!-- REGISTRO -->
+      <div id="screen-registro" style="display:none">
+        <div style="display:flex;flex-direction:column;align-items:center;margin-top:30px;margin-bottom:20px">
+          <div style="width:70px;height:70px;border-radius:16px;background:linear-gradient(135deg,var(--accent),#3ba1ff);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:28px;box-shadow:0 8px 24px rgba(11,116,255,0.3)">A</div>
+          <h1 style="margin-top:12px;font-size:20px;font-weight:700;color:#111">Crear Cuenta</h1>
+        </div>
+        <div class="card">
+          <label>Nombre completo</label>
+          <input class="input" placeholder="Juan Pérez" />
+          <label>Correo electrónico</label>
+          <input class="input" type="email" placeholder="correo@taller.com" />
+          <label>Contraseña</label>
+          <input class="input" type="password" placeholder="••••••" />
+          <label>Confirmar contraseña</label>
+          <input class="input" type="password" placeholder="••••••" />
+          <label>Rol</label>
+          <select class="input">
+            <option>Administrador</option>
+            <option>Mecánico</option>
+            <option>Recepcionista</option>
+          </select>
+          <button class="btn" onclick="show('dashboard')">Crear Cuenta</button>
+          <button class="btn ghost" onclick="show('login')">Ya tengo cuenta</button>
+        </div>
+      </div>
+      
+      <!-- RECUPERAR CONTRASEÑA -->
+      <div id="screen-recuperar" style="display:none">
+        <div style="display:flex;flex-direction:column;align-items:center;margin-top:50px;margin-bottom:30px">
+          <div style="width:80px;height:80px;border-radius:18px;background:linear-gradient(135deg,var(--accent),#3ba1ff);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:32px;box-shadow:0 8px 24px rgba(11,116,255,0.3)">🔑</div>
+          <h1 style="margin-top:16px;font-size:20px;font-weight:700;color:#111">Recuperar Contraseña</h1>
+          <p style="color:var(--muted);font-size:13px;margin-top:4px;text-align:center;padding:0 20px">Te enviaremos un correo para restablecer tu contraseña</p>
+        </div>
+        <div class="card">
+          <label>Correo electrónico</label>
+          <input class="input" type="email" placeholder="correo@taller.com" />
+          <button class="btn" onclick="alert('Correo enviado ✓');show('login')">Enviar correo</button>
+          <button class="btn ghost" onclick="show('login')">Volver al inicio</button>
+        </div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div id="screen-dashboard" style="display:none">
+        <div class="grid">
+          <div class="widget">
+            <h3>Total servicios</h3>
+            <div class="big">124</div>
+            <div class="muted">Último mes</div>
+          </div>
+          <div class="widget">
+            <h3>Vehículos</h3>
+            <div class="big">98</div>
+            <div class="muted">En proceso: 4</div>
+          </div>
+          <div class="widget" style="grid-column:span 2">
+            <h3>Ingresos del mes</h3>
+            <div class="big">$3.420.000</div>
+            <div class="muted">Meta: $4.000.000</div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <h3>Accesos Rápidos</h3>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px">
+            <button class="btn ghost small" onclick="show('clientes')">👥 Clientes</button>
+            <button class="btn ghost small" onclick="show('vehiculos')">🚗 Vehículos</button>
+            <button class="btn ghost small" onclick="show('ordenes')">📋 Órdenes</button>
+            <button class="btn ghost small" onclick="show('inventario')">📦 Inventario</button>
+            <button class="btn ghost small" onclick="show('reportes')">📊 Reportes</button>
+            <button class="btn ghost small" onclick="show('config')">⚙️ Config</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Tareas recientes</h3>
+          <div class="list">
+            <div class="row">Cambio de aceite<br><span class="muted">Placa ABC123</span></div>
+            <div class="row">Filtro aceite bajo<br><span class="muted">Stock: 3</span></div>
+            <div class="row">Orden #321 lista<br><span class="muted">Generar factura</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Alertas</h3>
+          <div class="list">
+            <div class="row" style="background:#fef3c7">⚠️ Filtro de aire<br><span class="muted">Stock mínimo</span></div>
+            <div class="row" style="background:#dcfce7">✓ Firebase<br><span class="muted">Conectado</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLIENTES -->
+      <div id="screen-clientes" style="display:none">
+        <div class="search-box">
+          <input class="input" placeholder="🔍 Buscar cliente por nombre o teléfono..." />
+        </div>
+        <button class="btn" onclick="alert('Agregar cliente')">+ Nuevo Cliente</button>
+        <div class="card">
+          <h3>Mis Clientes</h3>
+          <div class="list">
+            <div class="row">
+              <div>
+                <strong>Juan Pérez</strong><br>
+                <span class="muted">📱 320 555 1234</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar')">✏️</button>
+                <button class="action-btn delete" onclick="alert('Eliminar')">🗑️</button>
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Taller Express</strong><br>
+                <span class="muted">📱 300 444 9876 • 2 vehículos</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar')">✏️</button>
+                <button class="action-btn delete" onclick="alert('Eliminar')">🗑️</button>
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <strong>María López</strong><br>
+                <span class="muted">📱 311 222 3333</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar')">✏️</button>
+                <button class="action-btn delete" onclick="alert('Eliminar')">🗑️</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <h3>Agregar/Editar Cliente</h3>
+          <label>Nombre completo</label>
+          <input class="input" placeholder="Juan Pérez" />
+          <label>Teléfono</label>
+          <input class="input" placeholder="320 555 1234" />
+          <label>Correo</label>
+          <input class="input" type="email" placeholder="cliente@email.com" />
+          <label>Dirección</label>
+          <input class="input" placeholder="Calle 123 #45-67" />
+          <label>Observaciones</label>
+          <textarea class="input" style="height:60px" placeholder="Notas adicionales..."></textarea>
+          <button class="btn">Guardar Cliente</button>
+        </div>
+      </div>
+
+      <!-- VEHICULOS -->
+      <div id="screen-vehiculos" style="display:none">
+        <button class="btn" onclick="alert('Agregar vehículo')">+ Nuevo Vehículo</button>
+        <div class="card">
+          <h3>Vehículos Registrados</h3>
+          <div class="list">
+            <div class="row" onclick="alert('Ver historial ABC123')">
+              <div>
+                <strong>ABC123</strong><br>
+                <span class="muted">Honda CG 125</span>
+              </div>
+              <div style="text-align:right">
+                <span class="muted">Juan Pérez</span><br>
+                <span style="font-size:11px;color:var(--success)">3 servicios</span>
+              </div>
+            </div>
+            <div class="row" onclick="alert('Ver historial XYZ789')">
+              <div>
+                <strong>XYZ789</strong><br>
+                <span class="muted">Toyota Corolla 2015</span>
+              </div>
+              <div style="text-align:right">
+                <span class="muted">Taller Express</span><br>
+                <span style="font-size:11px;color:var(--success)">5 servicios</span>
+              </div>
+            </div>
+            <div class="row" onclick="alert('Ver historial DEF456')">
+              <div>
+                <strong>DEF456</strong><br>
+                <span class="muted">Yamaha FZ 150</span>
+              </div>
+              <div style="text-align:right">
+                <span class="muted">María López</span><br>
+                <span style="font-size:11px;color:var(--muted)">Sin servicios</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <h3>Detalle del Vehículo</h3>
+          <label>Placa</label>
+          <input class="input" placeholder="ABC123" />
+          <label>Marca</label>
+          <input class="input" placeholder="Honda" />
+          <label>Modelo</label>
+          <input class="input" placeholder="CG 125" />
+          <label>Año</label>
+          <input class="input" placeholder="2020" />
+          <label>Cliente</label>
+          <input class="input" placeholder="Seleccionar cliente" />
+          <button class="btn">Guardar Vehículo</button>
+        </div>
+      </div>
+
+      <!-- ORDENES -->
+      <div id="screen-ordenes" style="display:none">
+        <button class="btn" onclick="alert('Nueva orden')">+ Nueva Orden</button>
+        <div class="card">
+          <h3>Órdenes de Trabajo</h3>
+          <div class="list">
+            <div class="row" style="background:#fef3c7">
+              <div>
+                <strong>#321 - Pendiente</strong><br>
+                <span class="muted">ABC123 - Cambio aceite</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar orden')">✏️</button>
+              </div>
+            </div>
+            <div class="row" style="background:#dbeafe">
+              <div>
+                <strong>#322 - En proceso</strong><br>
+                <span class="muted">XYZ789 - Frenos</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar orden')">✏️</button>
+              </div>
+            </div>
+            <div class="row" style="background:#dcfce7">
+              <div>
+                <strong>#320 - Finalizada</strong><br>
+                <span class="muted">ABC123 - Alineación</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn" onclick="alert('Ver factura')">📄</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <h3>Crear/Editar Orden</h3>
+          <label>Cliente</label>
+          <select class="input">
+            <option>Seleccionar cliente</option>
+            <option>Juan Pérez</option>
+            <option>María López</option>
+          </select>
+          <label>Vehículo</label>
+          <select class="input">
+            <option>Seleccionar vehículo</option>
+            <option>ABC123 - Honda CG 125</option>
+            <option>XYZ789 - Toyota Corolla</option>
+          </select>
+          <label>Descripción del servicio</label>
+          <textarea class="input" style="height:60px" placeholder="Cambio de aceite y filtro..."></textarea>
+          <label>Estado</label>
+          <select class="input">
+            <option>Pendiente</option>
+            <option>En proceso</option>
+            <option>Finalizado</option>
+          </select>
+          <label>Repuestos utilizados</label>
+          <select class="input" multiple style="height:80px">
+            <option>Filtro de aceite - $15.000</option>
+            <option>Aceite 10W40 - $45.000</option>
+            <option>Filtro de aire - $12.000</option>
+          </select>
+          <label>Mano de obra</label>
+          <input class="input" type="number" placeholder="50000" />
+          <label>Costo total estimado</label>
+          <input class="input" type="number" placeholder="120000" />
+          <label>Fecha del servicio</label>
+          <input class="input" type="date" />
+          <label>Observaciones del mecánico</label>
+          <textarea class="input" style="height:60px" placeholder="Notas adicionales..."></textarea>
+          <button class="btn">Guardar Orden</button>
+          <button class="btn ghost" onclick="alert('Factura generada')">📄 Generar Factura</button>
+        </div>
+      </div>
+
+      <!-- INVENTARIO -->
+      <div id="screen-inventario" style="display:none">
+        <button class="btn" onclick="alert('Agregar repuesto')">+ Nuevo Repuesto</button>
+        <div class="card">
+          <h3>Inventario</h3>
+          <div class="list">
+            <div class="row" style="background:#fef3c7">
+              <div>
+                <strong>Filtro aceite</strong><br>
+                <span class="muted">Código: FA-001 • $15.000</span><br>
+                <span class="muted">Cant: 3 - Mín: 5 ⚠️</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar')">✏️</button>
+                <button class="action-btn" onclick="alert('Entrada/Salida')">📦</button>
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Pastillas freno</strong><br>
+                <span class="muted">Código: PF-002 • $35.000</span><br>
+                <span class="muted">Cant: 12 - Mín: 2 ✓</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar')">✏️</button>
+                <button class="action-btn" onclick="alert('Entrada/Salida')">📦</button>
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Batería 12V</strong><br>
+                <span class="muted">Código: BAT-003 • $180.000</span><br>
+                <span class="muted">Cant: 5 - Mín: 1 ✓</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar')">✏️</button>
+                <button class="action-btn" onclick="alert('Entrada/Salida')">📦</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <h3>Agregar/Editar Repuesto</h3>
+          <label>Nombre</label>
+          <input class="input" placeholder="Filtro de aceite" />
+          <label>Código</label>
+          <input class="input" placeholder="FA-001" />
+          <label>Descripción</label>
+          <textarea class="input" style="height:50px" placeholder="Filtro compatible con..."></textarea>
+          <label>Precio unitario</label>
+          <input class="input" type="number" placeholder="15000" />
+          <label>Cantidad en stock</label>
+          <input class="input" type="number" placeholder="10" />
+          <label>Stock mínimo (alerta)</label>
+          <input class="input" type="number" placeholder="5" />
+          <button class="btn">Guardar Repuesto</button>
+        </div>
+        
+        <div class="card">
+          <h3>Registrar Entrada/Salida</h3>
+          <label>Repuesto</label>
+          <select class="input">
+            <option>Seleccionar repuesto</option>
+            <option>Filtro aceite</option>
+            <option>Pastillas freno</option>
+          </select>
+          <label>Tipo de movimiento</label>
+          <select class="input">
+            <option>Entrada (compra)</option>
+            <option>Salida (venta/uso)</option>
+          </select>
+          <label>Cantidad</label>
+          <input class="input" type="number" placeholder="5" />
+          <button class="btn">Registrar Movimiento</button>
+        </div>
+      </div>
+
+      <!-- CONFIG -->
+      <div id="screen-config" style="display:none">
+        <div class="card">
+          <h3>Perfil de Usuario</h3>
+          <label>Nombre</label>
+          <input class="input" placeholder="Tu nombre" value="Admin Taller" />
+          <label>Correo</label>
+          <input class="input" type="email" placeholder="correo@taller.com" value="admin@taller.com" />
+          <label>Contraseña actual</label>
+          <input class="input" type="password" placeholder="••••••" />
+          <label>Nueva contraseña</label>
+          <input class="input" type="password" placeholder="••••••" />
+          <label>Confirmar nueva contraseña</label>
+          <input class="input" type="password" placeholder="••••••" />
+          <button class="btn">Guardar Cambios</button>
+        </div>
+        
+        <div class="card">
+          <h3>Preferencias</h3>
+          <label>Idioma</label>
+          <select class="input">
+            <option>Español</option>
+            <option>English</option>
+          </select>
+          <div class="checkbox-group">
+            <input type="checkbox" id="darkmode" />
+            <label for="darkmode" style="margin:0;cursor:pointer">Modo oscuro</label>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="notifications" checked />
+            <label for="notifications" style="margin:0;cursor:pointer">Notificaciones push</label>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Sincronización</h3>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <span style="width:12px;height:12px;border-radius:50%;background:#16a34a"></span>
+            <p class="muted" style="margin:0">Estado: Conectado a Firebase ✓</p>
+          </div>
+          <p class="muted" style="font-size:11px;margin-bottom:8px">Última sincronización: Hace 5 minutos</p>
+          <button class="btn">🔄 Sincronizar ahora</button>
+        </div>
+
+        <div class="card">
+          <button class="btn danger" onclick="show('login')">Cerrar Sesión</button>
+        </div>
+      </div>
+      
+      <!-- REPORTES -->
+      <div id="screen-reportes" style="display:none">
+        <div class="card">
+          <h3>Filtros de Reporte</h3>
+          <label>Fecha desde</label>
+          <input class="input" type="date" />
+          <label>Fecha hasta</label>
+          <input class="input" type="date" />
+          <label>Tipo de reporte</label>
+          <select class="input">
+            <option>Servicios realizados</option>
+            <option>Ingresos mensuales</option>
+            <option>Repuestos utilizados</option>
+            <option>Desempeño del personal</option>
+          </select>
+          <button class="btn">Generar Reporte</button>
+        </div>
+        
+        <div class="card">
+          <h3>Servicios del Mes</h3>
+          <div class="chart-box">
+            📊 Gráfica de Barras<br>
+            <span style="font-size:12px">(Servicios por día)</span>
+          </div>
+        </div>
+        
+        <div class="card">
+          <h3>Ingresos por Servicio</h3>
+          <div class="chart-box">
+            🥧 Gráfica de Pastel<br>
+            <span style="font-size:12px">(Distribución de ingresos)</span>
+          </div>
+        </div>
+        
+        <div class="card">
+          <h3>Resumen Mensual</h3>
+          <div class="list">
+            <div class="row">
+              <span>Total servicios</span>
+              <strong>124</strong>
+            </div>
+            <div class="row">
+              <span>Ingresos totales</span>
+              <strong style="color:var(--success)">$3.420.000</strong>
+            </div>
+            <div class="row">
+              <span>Repuestos vendidos</span>
+              <strong>87</strong>
+            </div>
+          </div>
+          <button class="btn ghost" style="margin-top:12px">📄 Exportar PDF</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+      <button class="nav-item" id="nav-dashboard" onclick="show('dashboard')">
+        <div class="nav-icon">🏠</div>
+        <div>Inicio</div>
+      </button>
+      <button class="nav-item" id="nav-ordenes" onclick="show('ordenes')">
+        <div class="nav-icon">📋</div>
+        <div>Órdenes</div>
+      </button>
+      <button class="nav-item" id="nav-vehiculos" onclick="show('vehiculos')">
+        <div class="nav-icon">🚗</div>
+        <div>Vehículos</div>
+      </button>
+      <button class="nav-item" id="nav-reportes" onclick="show('reportes')">
+        <div class="nav-icon">📊</div>
+        <div>Reportes</div>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const screens = ['login','registro','recuperar','dashboard','clientes','vehiculos','ordenes','inventario','reportes','config'];
+    const titles = {
+      login: 'AUTOMOTOSYNC',
+      registro: 'AUTOMOTOSYNC',
+      recuperar: 'AUTOMOTOSYNC',
+      dashboard: 'Dashboard',
+      clientes: 'Clientes',
+      vehiculos: 'Vehículos',
+      ordenes: 'Órdenes',
+      inventario: 'Inventario',
+      reportes: 'Reportes',
+      config: 'Configuración'
+    };
+
+    function show(id){
+      screens.forEach(s=>{
+        const el = document.getElementById('screen-'+s);
+        if(el) el.style.display = (s===id)?'block':'none';
+        
+        const nav = document.getElementById('nav-'+s);
+        if(nav) nav.classList.toggle('active', s===id);
+      });
+      
+      document.getElementById('page-title').textContent = titles[id] || 'AUTOMOTOSYNC';
+      
+      // Mostrar/ocultar header, menú inferior y botón de ajustes según la pantalla
+      const header = document.querySelector('.header');
+      const bottomNav = document.querySelector('.bottom-nav');
+      const settingsBtn = document.getElementById('settings-btn');
+      
+      // Pantallas sin navegación (login, registro, recuperar)
+      if(['login','registro','recuperar'].includes(id)){
+        header.classList.remove('show');
+        bottomNav.classList.remove('show');
+        if(settingsBtn) settingsBtn.style.display = 'none';
+      } else {
+        header.classList.add('show');
+        bottomNav.classList.add('show');
+        if(settingsBtn) settingsBtn.style.display = 'block';
+      }
+    }
+
+    // Ocultar splash después de 2 segundos y mostrar login
+    setTimeout(() => {
+      document.getElementById('splash').style.display = 'none';
+      show('login');
+    }, 2000);
+  </script>
+</body>
+</html>
