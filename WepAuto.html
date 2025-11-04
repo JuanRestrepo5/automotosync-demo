@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AUTOMOTOSYNC - Gestión de Talleres</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --accent: #0b74ff;
+      --accent-hover: #0960d9;
+      --muted: #6b7280;
+      --success: #16a34a;
+      --warning: #f59e0b;
+      --danger: #dc2626;
+      --border: #e6edf9;
+      --sidebar-width: 260px;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(180deg, var(--bg), #eef3fb);
+      color: #111;
+      min-height: 100vh;
+    }
+    
+    /* Splash Screen */
+    .splash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, var(--accent), #3ba1ff);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      animation: fadeOut 0.5s ease 2s forwards;
+    }
+    
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+        pointer-events: none;
+      }
+    }
+    
+    .splash-logo {
+      width: 120px;
+      height: 120px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--accent);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+      animation: pulse 1.5s ease infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    .splash h1 {
+      color: #fff;
+      margin-top: 24px;
+      font-size: 32px;
+      font-weight: 700;
+    }
+    
+    .splash p {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 16px;
+      margin-top: 8px;
+    }
+    
+    /* Header */
+    .header {
+      background: var(--card);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      padding: 0 32px;
+      height: 70px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    .header.show {
+      display: flex;
+    }
+    
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .menu-toggle {
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+    
+    .menu-toggle:hover {
+      background: #f8fbff;
+    }
+    
+    .menu-toggle span {
+      display: block;
+      width: 100%;
+      height: 3px;
+      background: #111;
+      border-radius: 2px;
+      transition: all 0.3s;
+    }
+    
+    .menu-toggle.active span:nth-child(1) {
+      transform: rotate(45deg) translate(8px, 8px);
+    }
+    
+    .menu-toggle.active span:nth-child(2) {
+      opacity: 0;
+    }
+    
+    .menu-toggle.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(7px, -7px);
+    }
+    
+    .logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #3ba1ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 24px;
+    }
+    
+    .brand h1 {
+      font-size: 20px;
+      font-weight: 600;
+    }
+    
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    /* Layout */
+    .app-layout {
+      display: flex;
+      min-height: calc(100vh - 70px);
+    }
+    
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--card);
+      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
+      padding: 24px 16px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      position: sticky;
+      top: 70px;
+      height: calc(100vh - 70px);
+      overflow-y: auto;
+      transition: all 0.3s ease;
+    }
+    
+    .sidebar.show {
+      display: flex;
+    }
+    
+    .sidebar.collapsed {
+      margin-left: calc(-1 * var(--sidebar-width));
+    }
+    
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: #111;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    
+    .nav-item:hover {
+      background: #f8fbff;
+      border-color: var(--border);
+    }
+    
+    .nav-item.active {
+      background: linear-gradient(90deg, var(--accent), #3ba1ff);
+      color: #fff;
+      border-color: transparent;
+    }
+    
+    .nav-icon {
+      font-size: 20px;
+      width: 24px;
+      text-align: center;
+    }
+    
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      padding: 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    
+    /* Auth Pages */
+    .auth-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .auth-box {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      max-width: 440px;
+      width: 100%;
+    }
+    
+    .auth-logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--accent), #3ba1ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 auto 24px;
+      box-shadow: 0 8px 24px rgba(11, 116, 255, 0.3);
+    }
+    
+    .auth-title {
+      text-align: center;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    
+    .auth-subtitle {
+      text-align: center;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+    
+    /* Cards */
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 4px 12px rgba(12, 30, 70, 0.06);
+      margin-bottom: 24px;
+    }
+    
+    .card h3 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      color: #111;
+    }
+    
+    /* Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    
+    .widget {
+      background: linear-gradient(135deg, #fff, #f8fbff);
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+    
+    .widget h4 {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+    
+    .widget-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 8px;
+    }
+    
+    .widget-subtitle {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    
+    /* Forms */
+    label {
+      display: block;
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      margin-top: 16px;
+      font-weight: 500;
+    }
+    
+    label:first-child {
+      margin-top: 0;
+    }
+    
+    .input, select, textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    
+    .input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    
+    /* Buttons */
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      border-radius: 10px;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      text-align: center;
+    }
+    
+    .btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(11, 116, 255, 0.3);
+    }
+    
+    .btn-block {
+      width: 100%;
+      margin-top: 16px;
+    }
+    
+    .btn-ghost {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid rgba(11, 116, 255, 0.2);
+    }
+    
+    .btn-ghost:hover {
+      background: #f8fbff;
+      transform: translateY(-1px);
+      box-shadow: none;
+    }
+    
+    .btn-danger {
+      background: var(--danger);
+    }
+    
+    .btn-danger:hover {
+      background: #b91c1c;
+    }
+    
+    .btn-small {
+      padding: 8px 16px;
+      font-size: 13px;
+    }
+    
+    /* Quick Actions Grid */
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    
+    /* Lists */
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border-radius: 10px;
+      background: #f8fbff;
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+    
+    .list-item:hover {
+      border-color: var(--accent);
+      box-shadow: 0 2px 8px rgba(11, 116, 255, 0.1);
+    }
+    
+    .list-item-content {
+      flex: 1;
+    }
+    
+    .list-item strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+    
+    .list-item .muted {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    
+    .action-btns {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .action-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .action-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .action-btn.edit {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+    
+    .action-btn.delete {
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+    
+    /* Alerts */
+    .alert {
+      padding: 16px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+    }
+    
+    .alert-warning {
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+    }
+    
+    .alert-success {
+      background: #dcfce7;
+      border: 1px solid #bbf7d0;
+    }
+    
+    .alert-info {
+      background: #dbeafe;
+      border: 1px solid #bfdbfe;
+    }
+    
+    /* Chart Placeholder */
+    .chart-box {
+      height: 300px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #f8fbff, #ffffff);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      border: 2px dashed var(--border);
+      font-size: 24px;
+    }
+    
+    .chart-box small {
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    
+    /* Checkbox */
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    
+    .checkbox-group label {
+      margin: 0;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    /* Status Badges */
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .badge-pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    
+    .badge-process {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    
+    .badge-completed {
+      background: #dcfce7;
+      color: #166534;
+    }
+    
+    /* Search Box */
+    .search-box {
+      margin-bottom: 16px;
+    }
+    
+    /* Utility Classes */
+    .hidden {
+      display: none !important;
+    }
+    
+    .text-center {
+      text-align: center;
+    }
+    
+    .mt-2 {
+      margin-top: 16px;
+    }
+    
+    .mb-2 {
+      margin-bottom: 16px;
+    }
+    
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .sidebar {
+        position: fixed;
+        left: -260px;
+        top: 70px;
+        height: calc(100vh - 70px);
+        z-index: 99;
+        transition: left 0.3s;
+      }
+      
+      .sidebar.show.mobile-open {
+        left: 0;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .main-content {
+        padding: 16px;
+      }
+      
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .auth-box {
+        padding: 32px 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Splash Screen -->
+  <div class="splash" id="splash">
+    <div class="splash-logo">A</div>
+    <h1>AUTOMOTOSYNC</h1>
+    <p>Cargando...</p>
+  </div>
+
+  <!-- Header -->
+  <header class="header" id="header">
+    <div class="brand">
+      <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="logo">A</div>
+      <h1 id="page-title">Dashboard</h1>
+    </div>
+    <div class="user-menu">
+      <div class="user-avatar" title="Admin Taller">A</div>
+    </div>
+  </header>
+
+  <!-- LOGIN -->
+  <div id="screen-login" class="hidden">
+    <div class="auth-container">
+      <div class="auth-box">
+        <div class="auth-logo">A</div>
+        <h2 class="auth-title">AUTOMOTOSYNC</h2>
+        <p class="auth-subtitle">Gestión de talleres mecánicos</p>
+        
+        <label>Correo electrónico</label>
+        <input type="email" class="input" placeholder="correo@taller.com">
+        
+        <label>Contraseña</label>
+        <input type="password" class="input" placeholder="••••••">
+        
+        <div class="checkbox-group">
+          <input type="checkbox" id="remember">
+          <label for="remember">Recordar sesión</label>
+        </div>
+        
+        <button class="btn btn-block" onclick="showScreen('dashboard')">Iniciar Sesión</button>
+        <button class="btn btn-ghost btn-block" onclick="showScreen('registro')">Crear cuenta</button>
+        
+        <p class="text-center mt-2" style="font-size:14px;color:var(--muted)">
+          <a href="#" onclick="showScreen('recuperar');return false" style="color:var(--accent)">¿Olvidó su contraseña?</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- REGISTRO -->
+  <div id="screen-registro" class="hidden">
+    <div class="auth-container">
+      <div class="auth-box">
+        <div class="auth-logo">A</div>
+        <h2 class="auth-title">Crear Cuenta</h2>
+        <p class="auth-subtitle">Registra tu taller</p>
+        
+        <label>Nombre completo</label>
+        <input type="text" class="input" placeholder="Juan Pérez">
+        
+        <label>Correo electrónico</label>
+        <input type="email" class="input" placeholder="correo@taller.com">
+        
+        <label>Contraseña</label>
+        <input type="password" class="input" placeholder="••••••">
+        
+        <label>Confirmar contraseña</label>
+        <input type="password" class="input" placeholder="••••••">
+        
+        <label>Rol</label>
+        <select class="input">
+          <option>Administrador</option>
+          <option>Mecánico</option>
+          <option>Recepcionista</option>
+        </select>
+        
+        <button class="btn btn-block" onclick="showScreen('dashboard')">Crear Cuenta</button>
+        <button class="btn btn-ghost btn-block" onclick="showScreen('login')">Ya tengo cuenta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECUPERAR CONTRASEÑA -->
+  <div id="screen-recuperar" class="hidden">
+    <div class="auth-container">
+      <div class="auth-box">
+        <div class="auth-logo">🔑</div>
+        <h2 class="auth-title">Recuperar Contraseña</h2>
+        <p class="auth-subtitle">Te enviaremos un correo para restablecer tu contraseña</p>
+        
+        <label>Correo electrónico</label>
+        <input type="email" class="input" placeholder="correo@taller.com">
+        
+        <button class="btn btn-block" onclick="alert('Correo enviado ✓');showScreen('login')">Enviar correo</button>
+        <button class="btn btn-ghost btn-block" onclick="showScreen('login')">Volver al inicio</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP LAYOUT -->
+  <div id="app-layout" class="app-layout hidden">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <a href="#" class="nav-item" onclick="showScreen('dashboard');return false" id="nav-dashboard">
+        <span class="nav-icon">🏠</span>
+        <span>Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" onclick="showScreen('clientes');return false" id="nav-clientes">
+        <span class="nav-icon">👥</span>
+        <span>Clientes</span>
+      </a>
+      <a href="#" class="nav-item" onclick="showScreen('vehiculos');return false" id="nav-vehiculos">
+        <span class="nav-icon">🚗</span>
+        <span>Vehículos</span>
+      </a>
+      <a href="#" class="nav-item" onclick="showScreen('ordenes');return false" id="nav-ordenes">
+        <span class="nav-icon">📋</span>
+        <span>Órdenes</span>
+      </a>
+      <a href="#" class="nav-item" onclick="showScreen('inventario');return false" id="nav-inventario">
+        <span class="nav-icon">📦</span>
+        <span>Inventario</span>
+      </a>
+      <a href="#" class="nav-item" onclick="showScreen('reportes');return false" id="nav-reportes">
+        <span class="nav-icon">📊</span>
+        <span>Reportes</span>
+      </a>
+      <a href="#" class="nav-item" onclick="showScreen('config');return false" id="nav-config">
+        <span class="nav-icon">⚙️</span>
+        <span>Configuración</span>
+      </a>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- DASHBOARD -->
+      <div id="content-dashboard">
+        <div class="grid">
+          <div class="widget">
+            <h4>Total servicios</h4>
+            <div class="widget-value">124</div>
+            <div class="widget-subtitle">Último mes</div>
+          </div>
+          <div class="widget">
+            <h4>Vehículos atendidos</h4>
+            <div class="widget-value">98</div>
+            <div class="widget-subtitle">En proceso: 4</div>
+          </div>
+          <div class="widget">
+            <h4>Ingresos del mes</h4>
+            <div class="widget-value">$3.420.000</div>
+            <div class="widget-subtitle">Meta: $4.000.000</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Accesos Rápidos</h3>
+          <div class="quick-actions">
+            <button class="btn btn-ghost btn-small" onclick="showScreen('clientes')">👥 Clientes</button>
+            <button class="btn btn-ghost btn-small" onclick="showScreen('vehiculos')">🚗 Vehículos</button>
+            <button class="btn btn-ghost btn-small" onclick="showScreen('ordenes')">📋 Órdenes</button>
+            <button class="btn btn-ghost btn-small" onclick="showScreen('inventario')">📦 Inventario</button>
+            <button class="btn btn-ghost btn-small" onclick="showScreen('reportes')">📊 Reportes</button>
+            <button class="btn btn-ghost btn-small" onclick="showScreen('config')">⚙️ Configuración</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Tareas Recientes</h3>
+          <div class="list">
+            <div class="list-item">
+              <div class="list-item-content">
+                <strong>Cambio de aceite</strong>
+                <span class="muted">Placa ABC123</span>
+              </div>
+            </div>
+            <div class="list-item">
+              <div class="list-item-content">
+                <strong>Filtro aceite bajo</strong>
+                <span class="muted">Stock: 3 unidades</span>
+              </div>
+            </div>
+            <div class="list-item">
+              <div class="list-item-content">
+                <strong>Orden #321 finalizada</strong>
+                <span class="muted">Generar factura</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Alertas</h3>
+          <div class="alert alert-warning">
+            ⚠️ <strong>Filtro de aire</strong> - Stock mínimo alcanzado (3 unidades)
+          </div>
+          <div class="alert alert-success">
+            ✓ <strong>Firebase</strong> - Conectado y sincronizado
+          </div>
+        </div>
+      </div>
+
+      <!-- CLIENTES -->
+      <div id="content-clientes" class="hidden">
+        <div class="search-box">
+          <input type="text" class="input" placeholder="🔍 Buscar cliente por nombre o teléfono...">
+        </div>
+        
+        <button class="btn mb-2" onclick="alert('Agregar cliente')">+ Nuevo Cliente</button>
+
+        <div class="card">
+          <h3>Mis Clientes</h3>
+          <div class="list">
+            <div class="list-item">
+              <div class="list-item-content">
+                <strong>Juan Pérez</strong>
+                <span class="muted">📱 320 555 1234</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar cliente')">✏️ Editar</button>
+                <button class="action-btn delete" onclick="alert('Eliminar cliente')">🗑️</button>
+              </div>
+            </div>
+            <div class="list-item">
+              <div class="list-item-content">
+                <strong>Taller Express</strong>
+                <span class="muted">📱 300 444 9876 • 2 vehículos</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar cliente')">✏️ Editar</button>
+                <button class="action-btn delete" onclick="alert('Eliminar cliente')">🗑️</button>
+              </div>
+            </div>
+            <div class="list-item">
+              <div class="list-item-content">
+                <strong>María López</strong>
+                <span class="muted">📱 311 222 3333</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar cliente')">✏️ Editar</button>
+                <button class="action-btn delete" onclick="alert('Eliminar cliente')">🗑️</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Agregar/Editar Cliente</h3>
+          <label>Nombre completo</label>
+          <input type="text" class="input" placeholder="Juan Pérez">
+          
+          <label>Teléfono</label>
+          <input type="tel" class="input" placeholder="320 555 1234">
+          
+          <label>Correo electrónico</label>
+          <input type="email" class="input" placeholder="cliente@email.com">
+          
+          <label>Dirección</label>
+          <input type="text" class="input" placeholder="Calle 123 #45-67">
+          
+          <label>Observaciones</label>
+          <textarea class="input" placeholder="Notas adicionales..."></textarea>
+          
+          <button class="btn btn-block">Guardar Cliente</button>
+        </div>
+      </div>
+
+      <!-- VEHÍCULOS -->
+      <div id="content-vehiculos" class="hidden">
+        <button class="btn mb-2" onclick="alert('Agregar vehículo')">+ Nuevo Vehículo</button>
+
+        <div class="card">
+          <h3>Vehículos Registrados</h3>
+          <div class="list">
+            <div class="list-item">
+              <div class="list-item-content">
+                <strong>ABC123</strong>
+                <span class="muted">Honda CG 125 • Juan Pérez</span>
+                <br><span class="badge badge-completed">3 servicios</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar vehículo')">✏️ Editar</button>
+                <button class="action-btn" onclick="alert('Ver historial')">📋 Historial</button>
+              </div>
+            </div>
+            <div class="list-item">
+              <div class="list-item-content">
+                <strong>XYZ789</strong>
+                <span class="muted">Toyota Corolla 2015 • Taller Express</span>
+                <br><span class="badge badge-completed">5 servicios</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar vehículo')">✏️ Editar</button>
+                <button class="action-btn" onclick="alert('Ver historial')">📋 Historial</button>
+              </div>
+            </div>
+            <div class="list-item">
+              <div class="list-item-content">
+                <strong>DEF456</strong>
+                <span class="muted">Yamaha FZ 150 • María López</span>
+                <br><span class="muted" style="font-size:11px">Sin servicios</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar vehículo')">✏️ Editar</button>
+                <button class="action-btn" onclick="alert('Ver historial')">📋 Historial</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Agregar/Editar Vehículo</h3>
+          <label>Placa</label>
+          <input type="text" class="input" placeholder="ABC123">
+          
+          <label>Marca</label>
+          <input type="text" class="input" placeholder="Honda">
+          
+          <label>Modelo</label>
+          <input type="text" class="input" placeholder="CG 125">
+          
+          <label>Año</label>
+          <input type="number" class="input" placeholder="2020">
+          
+          <label>Tipo</label>
+          <select class="input">
+            <option>Motocicleta</option>
+            <option>Automóvil</option>
+            <option>Camioneta</option>
+            <option>Camión</option>
+          </select>
+          
+          <label>Cliente</label>
+          <select class="input">
+            <option>Seleccionar cliente</option>
+            <option>Juan Pérez</option>
+            <option>Taller Express</option>
+            <option>María López</option>
+          </select>
+          
+          <button class="btn btn-block">Guardar Vehículo</button>
+        </div>
+      </div>
+
+      <!-- ÓRDENES -->
+      <div id="content-ordenes" class="hidden">
+        <button class="btn mb-2" onclick="alert('Nueva orden')">+ Nueva Orden</button>
+
+        <div class="card">
+          <h3>Órdenes de Trabajo</h3>
+          <div class="list">
+            <div class="list-item alert-warning">
+              <div class="list-item-content">
+                <strong>#321 - Cambio de aceite</strong>
+                <span class="muted">ABC123 • Juan Pérez</span>
+                <br><span class="badge badge-pending">Pendiente</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar orden')">✏️ Editar</button>
+                <button class="action-btn" onclick="alert('Cambiar estado')">🔄 Estado</button>
+              </div>
+            </div>
+            <div class="list-item alert-info">
+              <div class="list-item-content">
+                <strong>#322 - Reparación de frenos</strong>
+                <span class="muted">XYZ789 • Taller Express</span>
+                <br><span class="badge badge-process">En proceso</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar orden')">✏️ Editar</button>
+                <button class="action-btn" onclick="alert('Cambiar estado')">🔄 Estado</button>
+              </div>
+            </div>
+            <div class="list-item alert-success">
+              <div class="list-item-content">
+                <strong>#320 - Alineación y balanceo</strong>
+                <span class="muted">ABC123 • Juan Pérez</span>
+                <br><span class="badge badge-completed">Finalizada</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn" onclick="alert('Ver factura')">📄 Factura</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Crear/Editar Orden de Servicio</h3>
+          
+          <label>Cliente</label>
+          <select class="input">
+            <option>Seleccionar cliente</option>
+            <option>Juan Pérez</option>
+            <option>Taller Express</option>
+            <option>María López</option>
+          </select>
+          
+          <label>Vehículo</label>
+          <select class="input">
+            <option>Seleccionar vehículo</option>
+            <option>ABC123 - Honda CG 125</option>
+            <option>XYZ789 - Toyota Corolla 2015</option>
+            <option>DEF456 - Yamaha FZ 150</option>
+          </select>
+          
+          <label>Descripción del servicio</label>
+          <textarea class="input" placeholder="Cambio de aceite y filtro..."></textarea>
+          
+          <label>Estado</label>
+          <select class="input">
+            <option>Pendiente</option>
+            <option>En proceso</option>
+            <option>Finalizado</option>
+          </select>
+          
+          <label>Mecánico asignado</label>
+          <select class="input">
+            <option>Seleccionar mecánico</option>
+            <option>Carlos Rodríguez</option>
+            <option>Luis Martínez</option>
+            <option>Pedro Sánchez</option>
+          </select>
+          
+          <label>Repuestos utilizados</label>
+          <select class="input" multiple style="height:100px">
+            <option>Filtro de aceite - $15.000</option>
+            <option>Aceite 10W40 - $45.000</option>
+            <option>Filtro de aire - $12.000</option>
+            <option>Pastillas de freno - $35.000</option>
+            <option>Batería 12V - $180.000</option>
+          </select>
+          
+          <label>Mano de obra</label>
+          <input type="number" class="input" placeholder="50000">
+          
+          <label>Costo total estimado</label>
+          <input type="number" class="input" placeholder="120000">
+          
+          <label>Fecha del servicio</label>
+          <input type="date" class="input">
+          
+          <label>Observaciones del mecánico</label>
+          <textarea class="input" placeholder="Notas adicionales sobre el servicio..."></textarea>
+          
+          <button class="btn btn-block">Guardar Orden</button>
+          <button class="btn btn-ghost btn-block" onclick="alert('Factura generada')">📄 Generar Factura</button>
+        </div>
+      </div>
+
+      <!-- INVENTARIO -->
+      <div id="content-inventario" class="hidden">
+        <button class="btn mb-2" onclick="alert('Agregar repuesto')">+ Nuevo Repuesto</button>
+
+        <div class="card">
+          <h3>Inventario de Repuestos</h3>
+          <div class="list">
+            <div class="list-item alert-warning">
+              <div class="list-item-content">
+                <strong>Filtro de aceite</strong>
+                <span class="muted">Código: FA-001 • Precio: $15.000</span>
+                <br><span class="muted">Stock: 3 unidades • Mínimo: 5 ⚠️</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar repuesto')">✏️ Editar</button>
+                <button class="action-btn" onclick="alert('Registrar movimiento')">📦 Entrada/Salida</button>
+              </div>
+            </div>
+            <div class="list-item">
+              <div class="list-item-content">
+                <strong>Pastillas de freno</strong>
+                <span class="muted">Código: PF-002 • Precio: $35.000</span>
+                <br><span class="muted">Stock: 12 unidades • Mínimo: 2 ✓</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar repuesto')">✏️ Editar</button>
+                <button class="action-btn" onclick="alert('Registrar movimiento')">📦 Entrada/Salida</button>
+              </div>
+            </div>
+            <div class="list-item">
+              <div class="list-item-content">
+                <strong>Batería 12V</strong>
+                <span class="muted">Código: BAT-003 • Precio: $180.000</span>
+                <br><span class="muted">Stock: 5 unidades • Mínimo: 1 ✓</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar repuesto')">✏️ Editar</button>
+                <button class="action-btn" onclick="alert('Registrar movimiento')">📦 Entrada/Salida</button>
+              </div>
+            </div>
+            <div class="list-item">
+              <div class="list-item-content">
+                <strong>Aceite 10W40</strong>
+                <span class="muted">Código: AC-004 • Precio: $45.000</span>
+                <br><span class="muted">Stock: 8 litros • Mínimo: 3 ✓</span>
+              </div>
+              <div class="action-btns">
+                <button class="action-btn edit" onclick="alert('Editar repuesto')">✏️ Editar</button>
+                <button class="action-btn" onclick="alert('Registrar movimiento')">📦 Entrada/Salida</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Agregar/Editar Repuesto</h3>
+          
+          <label>Nombre del repuesto</label>
+          <input type="text" class="input" placeholder="Filtro de aceite">
+          
+          <label>Código</label>
+          <input type="text" class="input" placeholder="FA-001">
+          
+          <label>Descripción</label>
+          <textarea class="input" style="height:60px" placeholder="Filtro compatible con Honda, Yamaha..."></textarea>
+          
+          <label>Precio unitario</label>
+          <input type="number" class="input" placeholder="15000">
+          
+          <label>Cantidad en stock</label>
+          <input type="number" class="input" placeholder="10">
+          
+          <label>Stock mínimo (alerta)</label>
+          <input type="number" class="input" placeholder="5">
+          
+          <button class="btn btn-block">Guardar Repuesto</button>
+        </div>
+
+        <div class="card">
+          <h3>Registrar Entrada/Salida de Stock</h3>
+          
+          <label>Repuesto</label>
+          <select class="input">
+            <option>Seleccionar repuesto</option>
+            <option>Filtro de aceite</option>
+            <option>Pastillas de freno</option>
+            <option>Batería 12V</option>
+            <option>Aceite 10W40</option>
+          </select>
+          
+          <label>Tipo de movimiento</label>
+          <select class="input">
+            <option>Entrada (compra/abastecimiento)</option>
+            <option>Salida (venta/uso en servicio)</option>
+          </select>
+          
+          <label>Cantidad</label>
+          <input type="number" class="input" placeholder="5">
+          
+          <label>Observaciones</label>
+          <textarea class="input" style="height:60px" placeholder="Motivo del movimiento..."></textarea>
+          
+          <button class="btn btn-block">Registrar Movimiento</button>
+        </div>
+      </div>
+
+      <!-- REPORTES -->
+      <div id="content-reportes" class="hidden">
+        <div class="card">
+          <h3>Filtros de Reporte</h3>
+          
+          <label>Fecha desde</label>
+          <input type="date" class="input">
+          
+          <label>Fecha hasta</label>
+          <input type="date" class="input">
+          
+          <label>Tipo de reporte</label>
+          <select class="input">
+            <option>Servicios realizados</option>
+            <option>Ingresos mensuales</option>
+            <option>Repuestos más utilizados</option>
+            <option>Desempeño del personal</option>
+            <option>Clientes frecuentes</option>
+          </select>
+          
+          <button class="btn btn-block">Generar Reporte</button>
+        </div>
+
+        <div class="card">
+          <h3>Servicios Realizados - Últimos 30 Días</h3>
+          <div class="chart-box">
+            📊
+            <small>Gráfica de Barras</small>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Distribución de Ingresos por Tipo de Servicio</h3>
+          <div class="chart-box">
+            🥧
+            <small>Gráfica de Pastel</small>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Tendencia de Ingresos Mensuales</h3>
+          <div class="chart-box">
+            📈
+            <small>Gráfica de Líneas</small>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Resumen del Período</h3>
+          <div class="list">
+            <div class="list-item">
+              <span>Total de servicios realizados</span>
+              <strong>124</strong>
+            </div>
+            <div class="list-item">
+              <span>Ingresos totales</span>
+              <strong style="color:var(--success)">$3.420.000</strong>
+            </div>
+            <div class="list-item">
+              <span>Repuestos vendidos</span>
+              <strong>87 unidades</strong>
+            </div>
+            <div class="list-item">
+              <span>Clientes atendidos</span>
+              <strong>45</strong>
+            </div>
+            <div class="list-item">
+              <span>Vehículos diferentes</span>
+              <strong>98</strong>
+            </div>
+          </div>
+          
+          <button class="btn btn-ghost btn-block mt-2" onclick="alert('Exportando...')">📄 Exportar a PDF</button>
+          <button class="btn btn-ghost btn-block" onclick="alert('Exportando...')">📊 Exportar a Excel</button>
+        </div>
+      </div>
+
+      <!-- CONFIGURACIÓN -->
+      <div id="content-config" class="hidden">
+        <div class="card">
+          <h3>Perfil de Usuario</h3>
+          
+          <label>Nombre completo</label>
+          <input type="text" class="input" placeholder="Tu nombre" value="Admin Taller">
+          
+          <label>Correo electrónico</label>
+          <input type="email" class="input" placeholder="correo@taller.com" value="admin@taller.com">
+          
+          <label>Contraseña actual</label>
+          <input type="password" class="input" placeholder="••••••">
+          
+          <label>Nueva contraseña</label>
+          <input type="password" class="input" placeholder="••••••">
+          
+          <label>Confirmar nueva contraseña</label>
+          <input type="password" class="input" placeholder="••••••">
+          
+          <button class="btn btn-block">Guardar Cambios</button>
+        </div>
+
+        <div class="card">
+          <h3>Preferencias de la Aplicación</h3>
+          
+          <label>Idioma</label>
+          <select class="input">
+            <option>Español</option>
+            <option>English</option>
+            <option>Português</option>
+          </select>
+          
+          <div class="checkbox-group">
+            <input type="checkbox" id="darkmode">
+            <label for="darkmode">Activar modo oscuro</label>
+          </div>
+          
+          <div class="checkbox-group">
+            <input type="checkbox" id="notifications" checked>
+            <label for="notifications">Recibir notificaciones push</label>
+          </div>
+          
+          <div class="checkbox-group">
+            <input type="checkbox" id="email-alerts" checked>
+            <label for="email-alerts">Alertas por correo electrónico</label>
+          </div>
+          
+          <button class="btn btn-block">Guardar Preferencias</button>
+        </div>
+
+        <div class="card">
+          <h3>Sincronización con Firebase</h3>
+          
+          <div class="alert alert-success">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="width:12px;height:12px;border-radius:50%;background:#16a34a"></span>
+              <strong>Estado: Conectado ✓</strong>
+            </div>
+            <p style="margin-top:8px;font-size:13px">Última sincronización: Hace 5 minutos</p>
+          </div>
+          
+          <button class="btn btn-block">🔄 Sincronizar Ahora</button>
+          
+          <div style="margin-top:16px;padding:16px;background:#f8fbff;border-radius:10px;font-size:13px;color:var(--muted)">
+            <p><strong>Información:</strong></p>
+            <p style="margin-top:8px">Los datos se sincronizan automáticamente cada 10 minutos. En caso de no tener conexión, los cambios se guardarán localmente y se sincronizarán al recuperar la conexión.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Información del Sistema</h3>
+          <div class="list">
+            <div class="list-item">
+              <span>Versión de la aplicación</span>
+              <strong>v1.0.0</strong>
+            </div>
+            <div class="list-item">
+              <span>Base de datos local</span>
+              <strong>SQLite</strong>
+            </div>
+            <div class="list-item">
+              <span>Almacenamiento en la nube</span>
+              <strong>Firebase</strong>
+            </div>
+            <div class="list-item">
+              <span>Espacio utilizado</span>
+              <strong>45 MB / 1 GB</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <button class="btn btn-danger btn-block" onclick="if(confirm('¿Está seguro que desea cerrar sesión?')) showScreen('login')">
+            🚪 Cerrar Sesión
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Screens management
+    const authScreens = ['login', 'registro', 'recuperar'];
+    const appScreens = ['dashboard', 'clientes', 'vehiculos', 'ordenes', 'inventario', 'reportes', 'config'];
+    const allScreens = [...authScreens, ...appScreens];
+    
+    const titles = {
+      dashboard: 'Dashboard',
+      clientes: 'Gestión de Clientes',
+      vehiculos: 'Gestión de Vehículos',
+      ordenes: 'Órdenes de Servicio',
+      inventario: 'Inventario de Repuestos',
+      reportes: 'Reportes y Estadísticas',
+      config: 'Configuración'
+    };
+
+    function showScreen(screenName) {
+      // Hide all screens
+      allScreens.forEach(screen => {
+        const screenEl = document.getElementById('screen-' + screen);
+        const contentEl = document.getElementById('content-' + screen);
+        if (screenEl) screenEl.classList.add('hidden');
+        if (contentEl) contentEl.classList.add('hidden');
+      });
+
+      // Show/hide app layout based on screen type
+      const appLayout = document.getElementById('app-layout');
+      const header = document.getElementById('header');
+      const sidebar = document.getElementById('sidebar');
+
+      if (authScreens.includes(screenName)) {
+        // Auth screens
+        appLayout.classList.add('hidden');
+        header.classList.remove('show');
+        sidebar.classList.remove('show');
+        const screenEl = document.getElementById('screen-' + screenName);
+        if (screenEl) screenEl.classList.remove('hidden');
+      } else {
+        // App screens
+        appLayout.classList.remove('hidden');
+        header.classList.add('show');
+        sidebar.classList.add('show');
+        const contentEl = document.getElementById('content-' + screenName);
+        if (contentEl) contentEl.classList.remove('hidden');
+        
+        // Update page title
+        document.getElementById('page-title').textContent = titles[screenName] || 'AUTOMOTOSYNC';
+        
+        // Update active nav item
+        document.querySelectorAll('.nav-item').forEach(item => {
+          item.classList.remove('active');
+        });
+        const navItem = document.getElementById('nav-' + screenName);
+        if (navItem) navItem.classList.add('active');
+      }
+    }
+
+    // Initialize app
+    window.addEventListener('DOMContentLoaded', function() {
+      // Hide splash and show login after 2 seconds
+      setTimeout(function() {
+        document.getElementById('splash').style.display = 'none';
+        showScreen('login');
+      }, 2000);
+    });
+    
+    // Toggle sidebar
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const menuToggle = document.getElementById('menuToggle');
+      
+      sidebar.classList.toggle('collapsed');
+      menuToggle.classList.toggle('active');
+    }
+  </script>
+</body>
+</html>
